@@ -1,7 +1,7 @@
 # 🚜 DySurface: Consistent 4D Surface Reconstruction via Bridging Explicit Gaussians and Implicit Functions
 
 
-[Minje Kim](https://yunminjin2.github.io), [Younghyun Noh], [Jaesoon Kim], [Tae-Kyun Kim](https://sites.google.com/view/tkkim/home)
+[Minje Kim](https://yunminjin2.github.io), Younghyun Noh, Jaesoon Kim, [Tae-Kyun Kim](https://sites.google.com/view/tkkim/home)
 
 [![report](https://img.shields.io/badge/Project-Page-blue)](https://yunminjin2.github.io/projects/dysurface/)
 [![report](https://img.shields.io/badge/ArXiv-Paper-red)](https://arxiv.org/abs/2605.10360)

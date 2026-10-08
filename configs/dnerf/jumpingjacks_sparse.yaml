@@ -1,0 +1,398 @@
+name: jumpingjacks
+tag: gs_barn_curv_1_pre_15k_0.01
+seed: 42
+dataset:
+  name: blender_dynamic
+  root_dir: null
+  img_downscale: 1
+  gt_mesh_path: none
+  up_est_method: ground
+  center_est_method: point
+  scene_center:
+  - 0
+  - 0
+  - 0
+  n_test_traj_steps: 2
+  apply_mask: alpha
+  load_data_on_gpu: true
+  canonicalize_poses: false
+  canon_time: 0.18
+  progressive_time_sigma: 0.001
+  neuralangelo_scale: 1
+  neuralangelo_center:
+  - 0
+  - 0
+  - 0
+  img_wh:
+  - 400
+  - 400
+  near_plane: 2.0
+  far_plane: 6.0
+  train_split: train
+  val_split: test
+  test_split: test
+  predict_split: predict
+  predict:
+    _360: true
+    view_id: 0
+    num_frames: 30
+model:
+  name: sparse-gags-dneus
+  radius: 1.4
+  interval_radius: 0.7
+  using_pretrain: false
+  using_pretrain_path: null
+  gs_sampling: true
+  num_samples_per_ray: 1024
+  num_samples_equispaced: 64
+  num_samples_fine: 256
+  num_samples_full: 1024
+  train_num_rays: 256
+  max_train_num_rays: 7168
+  grid_prune: true
+  grid_prune_occ_thre: 0.001
+  dynamic_ray_sampling: true
+  batch_image_sampling: false
+  randomized: true
+  ray_chunk: 1024
+  cos_anneal_end: 30000
+  learned_background: false
+  background_color: white
+  optimize_gaussian: true
+  start_optimize_gaussian: 20000
+  if_gaussian: true
+  if_check_gaussian_opacity: false
+  if_check_gaussian_rgb: false
+  transform_scaler: 1
+  use_dct_deform: true
+  voxel_size: 0.002
+  voxel_resolution: 256
+  voxel_feat_dim: 6
+  dct_K: 19
+  dct_T: 20
+  variance:
+    init_val: 0.3
+    modulate: false
+  transform_field:
+    gs_distance_threshold: 0.0001
+  geometry:
+    name: volume-sdf-sg
+    radius: ${model.radius}
+    add_feat_dim: 32
+    feature_dim: 128
+    grad_type: analytic
+    finite_difference_eps: progressive
+    custom_smoothing: true
+    isosurface:
+      method: mc
+      resolution: 512
+      chunk: 2097152
+      threshold: 0.0
+    xyz_encoding_config:
+      otype: ProgressiveBandHashGrid
+      n_levels: 16
+      n_features_per_level: 2
+      log2_hashmap_size: 21
+      base_resolution: 32
+      per_level_scale: 1.3195079107728942
+      include_xyz: true
+      start_level: 4
+      start_step: 2000
+      update_steps: 2000
+    position_encoding_config:
+      otype: VanillaFrequency
+      n_frequencies: 10
+      include_xyz: true
+    time_encoding_config:
+      otype: VanillaFrequency
+      n_frequencies: 6
+      include_xyz: false
+    view_encoding_config:
+      otype: VanillaFrequency
+      n_frequencies: 4
+      include_xyz: true
+    mlp_network_config:
+      otype: VanillaMLP
+      activation: Softplus
+      output_activation: none
+      n_neurons: 128
+      n_hidden_layers: 1
+      sphere_init: true
+      sphere_init_radius: 0.8
+      weight_norm: true
+  texture:
+    name: volume-radiance-feat
+    feature_dim: 32
+    input_feature_dim: ${add:${model.geometry.feature_dim},3}
+    add_feat_dim: 32
+    time_feat_dim: 3
+    dir_encoding_config:
+      otype: SphericalHarmonics
+      degree: 4
+    time_encoding_config:
+      otype: VanillaFrequency
+      n_frequencies: 6
+    mlp_network_config:
+      otype: VanillaMLP
+      activation: ReLU
+      output_activation: none
+      n_neurons: 128
+      n_hidden_layers: 2
+      weight_norm: true
+    color_activation: sigmoid
+  num_samples_per_ray_bg: 256
+  geometry_bg:
+    name: volume-density
+    radius: ${model.radius}
+    feature_dim: 8
+    density_activation: trunc_exp
+    density_bias: -1
+    isosurface: null
+    xyz_encoding_config:
+      otype: HashGrid
+      n_levels: 16
+      n_features_per_level: 2
+      log2_hashmap_size: 19
+      base_resolution: 32
+      per_level_scale: 1.3195079107728942
+    mlp_network_config:
+      otype: VanillaMLP
+      activation: ReLU
+      output_activation: none
+      n_neurons: 64
+      n_hidden_layers: 1
+  texture_bg:
+    name: volume-radiance
+    input_feature_dim: ${model.geometry_bg.feature_dim}
+    dir_encoding_config:
+      otype: SphericalHarmonics
+      degree: 4
+    mlp_network_config:
+      otype: VanillaMLP
+      activation: ReLU
+      output_activation: none
+      n_neurons: 64
+      n_hidden_layers: 2
+    color_activation: sigmoid
+  embedder:
+    multires: 0
+    i_embed: 0
+gaussian_arguments:
+  model:
+    sh_degree: 3
+    feat_dim: 32
+    n_offsets: 4
+    voxelsize: 0.01
+    voxel_size: 0.001
+    update_depth: 3
+    update_init_factor: 16
+    update_hierachy_factor: 4
+    position_emb_level: 10
+    time_emb_level: 6
+    use_feat_bank: false
+    use_tcnn: false
+    images: images
+    resolution: -1
+    data_device: cuda
+    eval: false
+    lod: 0
+  pipeline:
+    convert_SHs_python: false
+    compute_cov3D_python: false
+    debug: false
+  optimization:
+    iterations: ${trainer.max_steps}
+    offset_lr_init: 0.01
+    offset_lr_final: 0.0001
+    offset_lr_delay_mult: 0.01
+    offset_lr_max_steps: ${gaussian_arguments.optimization.iterations}
+    feature_lr: 0.0025
+    opacity_lr: 0.05
+    scaling_lr: 0.005
+    rotation_lr: 0.001
+    start_dynamic_iter: 1000
+    stable_until_iter: 5000
+    gaussian_update_freq: 500
+    position_lr_init: 0.00016
+    position_lr_final: 1.6e-05
+    position_lr_delay_mult: 0.01
+    position_lr_max_steps: 40000
+    exposure_lr_init: 0.01
+    exposure_lr_final: 0.001
+    exposure_lr_delay_steps: 0
+    exposure_lr_delay_mult: 0.0
+    network_lr_init: 0.0008
+    network_lr_final: 0.0001
+    mlp_opacity_lr_init: 0.002
+    mlp_opacity_lr_final: 2.0e-05
+    mlp_opacity_lr_delay_mult: 0.01
+    mlp_opacity_lr_max_steps: ${gaussian_arguments.optimization.iterations}
+    mlp_cov_lr_init: 0.004
+    mlp_cov_lr_final: 0.004
+    mlp_cov_lr_delay_mult: 0.01
+    mlp_cov_lr_max_steps: ${gaussian_arguments.optimization.iterations}
+    mlp_color_lr_init: 0.008
+    mlp_color_lr_final: 5.0e-05
+    mlp_color_lr_delay_mult: 0.01
+    mlp_color_lr_max_steps: ${gaussian_arguments.optimization.iterations}
+    mlp_featurebank_lr_init: 0.01
+    mlp_featurebank_lr_final: 1.0e-05
+    mlp_featurebank_lr_delay_mult: 0.01
+    mlp_featurebank_lr_max_steps: ${gaussian_arguments.optimization.iterations}
+    percent_dense: 0.01
+    lambda_dssim: 0.2
+    lambda_ref_rgb: 0.5
+    lambda_rgb: 0.8
+    lambda_delta_reg: 0.03
+    lambda_normal_reg: 0.1
+    lambda_mask: 0.1
+    lambda_cycle: 0.5
+    lambda_zero_pose: 0.5
+    start_stat: 500
+    update_from: 1500
+    update_interval: 100
+    update_until: 50000
+    min_opacity: 0.005
+    success_threshold: 0.8
+    densification_interval: 100
+    opacity_reset_interval: 4000
+    densify_from_iter: 500
+    densify_until_iter: 15000
+    densify_grad_threshold: 0.0004
+  runtime:
+    detect_anomaly: false
+    mesh_render: false
+    checkpoint_iterations: []
+    save_iterations:
+    - -1
+    - 1000
+    - 3100
+    - 5000
+    - 10000
+    - 15000
+    - ${system.pretrain_step}
+    - 20000
+    - 30000
+    - ${trainer.max_steps}
+    test_iterations:
+    - -1
+    - 1000
+    - 2000
+    - 4000
+    - 6000
+    - 8000
+    - 10000
+    - 15000
+    - 20000
+    - 25000
+    - 30000
+    - 40000
+    - 45000
+    - ${trainer.max_steps}
+system:
+  name: sparse-gags-system
+  constant_steps: 2000
+  pretrain_step: 30000
+  posttrain_step: 3000
+  refine_step: 1500
+  step1: 20000
+  step2: 25000
+  mesh_gs_include_gs: true
+  mesh_gs_include_mesh: true
+  mesh_gs_reinit_trans_vox: false
+  loss:
+    lambda_rgb_mse: 0.0
+    lambda_rgb_l1: 1.0
+    lambda_mask: 0.3
+    lambda_eikonal: 0.1
+    lambda_curvature: 0
+    lambda_sparsity: 0.0
+    lambda_distortion: 0.0
+    lambda_distortion_bg: 0.0
+    lambda_delta_reg: 0.01
+    lambda_opaque: 0.0
+    lambda_depth: 0.0
+    sparsity_scale: 0.0
+    lambda_smoothing: 0
+    depth_w: 0.01
+    normal_w: 0.01
+    lambda_cycle_loss: 5
+    lambda_canon_sdf: 0.5
+    lambda_mesh_rendering: 1.0
+    lambda_mesh_offset: 0.0
+    mesh_lr: 0.0001
+    mesh_lr_final: 1.0e-05
+    mesh_vis_every: 5
+    lambda_mesh_mask: 1.0
+    lambda_mesh_lap: 1.0
+  growing_weight: 0.0002
+  use_progressive_training: false
+  progressive_time_start: 0.21
+  progressive_time_max: 1.0
+  progressive_step_start: 4000
+  progressive_step_end: 10000
+  optimizer:
+    name: AdamW
+    args:
+      lr: 0.01
+      betas:
+      - 0.9
+      - 0.99
+      eps: 1.0e-15
+      weight_decay: 0.01
+    params:
+      tineuvox:
+        lr: 0.001
+        weight_decay: 0.01
+      geometry:
+        lr: 0.001
+        weight_decay: 0.01
+      texture:
+        lr: 0.001
+        weight_decay: 0.01
+      variance:
+        lr: 0.001
+  scheduler:
+    name: SequentialLR
+    interval: step
+    milestones:
+    - ${system.constant_steps}
+    - ${system.step1}
+    - ${system.step2}
+    schedulers:
+    - name: ConstantLR
+      args:
+        factor: 1.0
+        total_iters: ${system.constant_steps}
+    - name: ConstantLR
+      args:
+        factor: 0.1
+        total_iters: ${sub:${system.step1},${system.constant_steps}}
+        last_epoch: ${system.constant_steps}
+    - name: ConstantLR
+      args:
+        factor: 0.01
+        total_iters: ${sub:${system.step2},${system.step1}}
+        last_epoch: ${system.step1}
+    - name: ConstantLR
+      args:
+        factor: 0.001
+        total_iters: ${sub:${trainer.max_steps},${system.step2}}
+        last_epoch: ${system.step2}
+  export_mesh: true
+checkpoint:
+  save_top_k: -1
+  every_n_train_steps: 5000
+export:
+  time: 0.0
+  chunk_size: 1048576
+  export_vertex_color: true
+trainer:
+  max_steps: 30000
+  log_every_n_steps: 100
+  num_sanity_val_steps: 0
+  val_check_interval: 2500
+  limit_train_batches: 1.0
+  limit_val_batches: 1
+  enable_progress_bar: true
+  precision: 32

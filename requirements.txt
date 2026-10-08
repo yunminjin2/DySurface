@@ -1,0 +1,20 @@
+# Install CUDA-enabled PyTorch and torchvision before these packages.
+pytorch-lightning==1.9.5
+omegaconf==2.2.3
+nerfacc==0.3.3
+numpy==1.23.1
+Pillow==10.4.0
+plyfile==1.0.3
+PyMCubes==0.1.4
+opencv-python==4.13.0.92
+imageio==2.35.1
+imageio-ffmpeg==0.5.1
+einops==0.8.1
+trimesh==4.11.2
+matplotlib==3.7.5
+lpips==0.1.4
+piq==0.8.0
+tensorboard==2.14.0
+tqdm==4.67.3
+PyYAML==6.0.3
+packaging==26.0
